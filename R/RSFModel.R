@@ -30,6 +30,5 @@ return(predAndUncertain)
     return(modsPred)
   })
   names(yearPrediction) <- paste0(names(modLayers))
-  browser()
   return(yearPrediction[[paste0("Year", currentTime)]])
 }

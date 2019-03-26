@@ -1,4 +1,4 @@
-getLayers <- function(currentTime, ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STILL NEED TO COPY THIS FUNCTION TO THE caribouPopGrowth when ready!
+getLayers <- function(currentTime,
                            cohortData, # Has age info per pixel group
                            pixelGroupMap, #Map of pixel groups
                            startTime,

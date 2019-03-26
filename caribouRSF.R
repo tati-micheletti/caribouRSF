@@ -13,9 +13,10 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "caribouRSF.Rmd"),
-  reqdPkgs = list("data.table", "ggplot2", "pemisc"),
+  reqdPkgs = list("data.table", "ggplot2", "pemisc"), 
   parameters = rbind(
     defineParameter(".useCache", "logical", FALSE, NA, NA, "Should this entire module be run with caching activated?"),
+    defineParameter("modelType", "character", "TaigaPlains", NA, NA, "Should this entire module be run with caching activated?"),
     defineParameter("meanFire", "numeric", 30.75, NA, NA, "Mean cummulative fire from ECCC Scientific report 2011"),
     defineParameter("sdFire", "numeric", 10.6, NA, NA, "SD cummulative fire from ECCC Scientific report 2011"),
     defineParameter(".plotInitialTime", "numeric", start(sim) + 1, NA, NA, "inital plot time"),
@@ -101,7 +102,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "makingModel")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "gettingData")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "lookingForCaribou")
-      sim <- scheduleEvent(sim, end(sim), "caribouRSF", "plot", eventPriority = .last())
     },
     makingModel = {
       # Prepare the Equation
@@ -159,17 +159,11 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModels = sim$caribouModels,
                                                                                 modLayers = sim$modLayers,
                                                                                 currentTime = time(sim),
-                                                                                pathData = dataPath(sim))
+                                                                                pathData = dataPath(sim),
+                                                                                modelType = P(sim)$modelType)
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "growingCaribou")
       
-    },
-
-    plot = {
-      sim$plotCaribou <- plotCaribou(startTime = start(sim),
-                                     currentTime = time(sim),
-                                     endTime = end(sim),
-                                     predictedCaribou = sim$predictedCaribou)
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
