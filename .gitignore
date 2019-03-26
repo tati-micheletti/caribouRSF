@@ -29,6 +29,8 @@ vignettes/*.pdf
 /cache/
 outputs/
 outputs/*.*
+data/
+data/*.*
 
 
 # Temporary files created by R markdown

@@ -49,6 +49,7 @@ oldBurn <- scfm same way for the other caribou model... > 40
 # Usage
 
 ```{r module_usage}
+
 # Load SpaDES
 library("SpaDES")
 library("raster")
@@ -89,12 +90,10 @@ getPaths() # shows where the 4 relevant paths are
 times <- list(start = 0, end = 4)
 
 parameters <- list(
-  #.progress = list(type = "text", interval = 1), # for a progress bar
-  ## If there are further modules, each can have its own set of parameters:
-  #module1 = list(param1 = value1, param2 = value2),
-  #module2 = list(param1 = value1, param2 = value2)
+  "decidousSp" = c("Betu_Pap", "Popu_Tre", "Popu_Bal"),
+  "predictionInterval" = 10
 )
-modules <- list("caribouPopGrowthModel")
+modules <- list("caribouRSF")
 .objects <- list()
 inputs <- list()
 outputs <- list()
@@ -102,9 +101,8 @@ outputs <- list()
 if (quickPlot::isRstudioServer()) options(httr_oob_default = TRUE)
 
 caribousRSF <- simInitAndSpades(times = times, params = parameters, modules = modules,
-                 objects = .objects)
+                 objects = .objects, debug = 2)
 
-```
 ```
 
 # Events

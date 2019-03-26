@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "caribouRSF.Rmd"),
-  reqdPkgs = list("data.table", "ggplot2"),
+  reqdPkgs = list("data.table", "ggplot2", "pemisc"),
   parameters = rbind(
     defineParameter(".useCache", "logical", FALSE, NA, NA, "Should this entire module be run with caching activated?"),
     defineParameter("meanFire", "numeric", 30.75, NA, NA, "Mean cummulative fire from ECCC Scientific report 2011"),
@@ -25,8 +25,13 @@ defineModule(sim, list(
     defineParameter("popModel", "character", "annualLambda", NA, NA, paste0("Which population model to use? Options", 
                                                                             "are in the file popModels.R in the R folder", 
                                                                             " Default is the simplest lamdba model")),
+    defineParameter("predictionInterval", "numeric", 10, NA, NA, "Time between predictions"),
     defineParameter(name = "baseLayer", class = "character", default = 2005, min = NA, max = NA, 
-                    desc = "Which layer should be used? LCC05 or LCC10?")
+                    desc = "Which layer should be used? LCC05 or LCC10?"),
+    defineParameter(name = "decidousSp", class = "character", default = c("Betu_Pap", "Popu_Tre", "Popu_Bal"), 
+                    min = NA, max = NA, desc = "Deciduous species to be considered for caribou"),
+    defineParameter(name = "oldBurnTime", class = "numeric", default = 40, 
+                    min = NA, max = NA, desc = "Threshold for oldBurn/newBurn")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "waterRaster", objectClass = "RasterLayer",
@@ -41,29 +46,49 @@ defineModule(sim, list(
     expectsInput(objectName = "roadDensity", objectClass = "RasterLayer",
                  desc = paste0("Layer that maps a 10km buffer on each road.", 
                                "This layer is static if no modules are forecasting anthropogenic disturbances")),
-    expectsInput(objectName = "modelsToUseRSF", objectClass = "character", 
+    expectsInput(objectName = "modelsToUse", objectClass = "character", 
                  desc = "Which models from ECCC to be used? National or regional?", 
                  sourceURL = NA),
-    expectsInput(objectName = "elevation", objectClass = "RasterLayer", 
+    expectsInput(objectName = "anthropogenicLayer", objectClass = "RasterLayer", 
+                 desc = "Raster with road buffered disturbances", 
+                 sourceURL = "https://drive.google.com/open?id=1zj7zo8NBNhxxHMUL4ZnKTaP3niuQEI1m"),
+    expectsInput(objectName = "Elevation", objectClass = "RasterLayer", 
                  desc = "Raster with elevation values", 
-                 sourceURL = "https://drive.google.com/open?id=1SOimSD2jehRxV-SbMmgLUh3W5yStwhdq"),
-    expectsInput(objectName = "vrug", objectClass = "RasterLayer", 
+                 sourceURL = "https://drive.google.com/open?id=1SKnXVqUD10_VdemQaPaz9MrWiNZzK7VY"),
+    expectsInput(objectName = "Vrug", objectClass = "RasterLayer", 
                  desc = "Raster with elevation values", 
-                 sourceURL = "https://drive.google.com/open?id=1SOimSD2jehRxV-SbMmgLUh3W5yStwhdq"),
+                 sourceURL = "https://drive.google.com/open?id=16u07GpGQbBd5Yh8xPZ_xLiUo31OF0uDP"),
     expectsInput(objectName = "provincesToModel", objectClass = "character", 
                  desc = "Which province caribou data should be used for the module?"),
     expectsInput(objectName = "caribouCoefTableRSF", objectClass = "data.table", 
                  desc = "Published caribou coefficients", 
-                 sourceURL = "https://drive.google.com/open?id=14ck35G8A3A6s65vSAWWeUp2_vXgmYZe5"),
+                 sourceURL = "https://drive.google.com/open?id=16bgCDuQaxrQakKs2RL-eU2iFAhWylcRu"),
     expectsInput(objectName = "LCC05", objectClass = "RasterLayer", 
                  desc = "This will give is both shrub and herb layers", 
-                 sourceURL = "")
+                 sourceURL = ""),
+    expectsInput(objectName = "fixedLayers", objectClass = "character", 
+                 desc = "Fixed layers for the Caribou RSF model, currently: Elevation, Vrug, Peatland, NDVI, Shrub, Herb", 
+                 sourceURL = ""),
+    expectsInput(objectName = "simulLayers", objectClass = "character", 
+                 desc = "Possibly simulated layers for the Caribou RSF model, currently: RoadDensity, Conifer, Deciduous, Wetland, Water, RecentBurn, OldBurn", 
+                 sourceURL = ""),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonDataFrame", 
+                 desc = "Study area for the prediction. Currently only available for NWT", 
+                 sourceURL = "https://drive.google.com/open?id=1LUxoY2-pgkCmmNH5goagBp3IMpj6YrdU"),
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
+                 desc = "All spatial outputs will be reprojected and resampled to it", 
+                 sourceURL = "https://drive.google.com/open?id=1fo08FMACr_aTV03lteQ7KsaoN9xGx1Df"),
+    expectsInput(objectName = "reclassLCC05", objectClass = "data.table",
+                 desc = "Table 41 from ECCC report converting LCC05 classes", 
+                 sourceURL = "https://drive.google.com/open?id=1pMfkIoqFoxwICMlend_mNuwNMGA5_6Fr")
   ), 
   outputObjects = bind_rows(
     createsOutput(objectName = "caribouModels", objectClass = "list", 
                   desc = "List with model equations. Default is TaigaPlains (ECCC 2011, Table 46)."),
     createsOutput(objectName = "predictedPresenceProbability", objectClass = "list", 
-                  desc = "List of rasters per year, indicating the probability of presence of Caribous")
+                  desc = "List of rasters per year, indicating the probability of presence of Caribous"),
+    createsOutput(objectName = "modLayers", objectClass = "RasterStack", 
+                  desc = "Stack of all dynamic layers: oldBurn, newBurn, biomassMap, anthropogenicLayer, waterRaster")
   )
 ))
 
@@ -77,76 +102,41 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "gettingData")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "lookingForCaribou")
       sim <- scheduleEvent(sim, end(sim), "caribouRSF", "plot", eventPriority = .last())
-      if (P(sim)$popModel != "annualLambda")
-        sim <- scheduleEvent(sim, start(sim), "caribouRSF", "updatingPopulationSize")
     },
     makingModel = {
       # Prepare the Equation
-      
       sim$caribouModels <- createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
-                                        modelsToUse = sim$modelsToUseRSF)
+                                        modelsToUse = sim$modelsToUse)
     },
     gettingData = {
       Require("magrittr")
-      if (!suppliedElsewhere(object = "cohortData", sim = sim)){
-        message(crayon::yellow(paste0("cohortData not supplied by another module.", 
-                                      " Will try using files in inputPath(sim) or create dummy data")))
-        mod$cohortDataName <- grepMulti(x = list.files(inputPath(sim), 
-                                                       recursive = TRUE), 
-                                        patterns = c("cohortData", time(sim)))
-        if (length(mod$cohortDataName) == 0){
-          mod$cohortData <- NULL
-        } else {
-          mod$cohortData <- readRDS(file.path(inputPath(sim), mod$cohortDataName))
-        }
-        if (!is.null(mod$cohortData)) message(paste0("cohortData loaded from " , 
-                                                     crayon::magenta(file.path(inputPath(sim), mod$cohortDataName)),
-                                                     " for year ", time(sim)))
-      }
-      
-      if (!suppliedElsewhere(object = "pixelGroupMap", sim = sim)){
-        message(crayon::yellow(paste0("pixelGroupMap not supplied by another module." , 
-                                      " Will try using files in inputPath(sim) or create dummy data")))
-        mod$pixelGroupMapName <- grepMulti(x = list.files(inputPath(sim), 
-                                                          recursive = TRUE), 
-                                           patterns = c("pixelGroupMap", time(sim)))
-        if (length(mod$pixelGroupMapName) == 0) {
-          mod$pixelGroupMap <- NULL
-        } else {
-          mod$pixelGroupMap <- readRDS(file.path(inputPath(sim), mod$pixelGroupMapName))
-        }
-        if (!is.null(mod$pixelGroupMap)) message(paste0("pixelGroupMap loaded from ", 
-                                                        crayon::magenta(file.path(inputPath(sim), mod$cohortDataName)), 
-                                                        " for year ", time(sim)))
-      }
-      
+      mod$cohortData <- createModObject(data = "cohortData", sim = sim, 
+                                        pathInput = inputPath(sim), time = time(sim))
+      mod$pixelGroupMap <- createModObject(data = "pixelGroupMap", sim = sim, 
+                                           pathInput = inputPath(sim), time = time(sim))
+
       if (any(is.null(mod$pixelGroupMap), is.null(mod$cohortData))) {
         params(sim)$.useDummyData <- TRUE
       }
       
       # schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + 1, "caribouRSF", "gettingData")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "gettingData")
       
     },
     lookingForCaribou = {
       
       if (params(sim)$.useDummyData == TRUE){
-        message(crayon::red(paste0("Disturbance total information (pixelGroupMap & cohortData) was not found.", 
-                                   "\nGenerating DUMMY DATA to test the module.")))
-        if (is.null(sim$disturbances)){
-          sim$disturbances <- list(Year0 = data.frame(disturbances = rnorm(n = 1, mean = P(sim)$meanFire, sd = P(sim)$sdFire)))
-        } else {
-          
-          sim$disturbances[[paste0("Year", time(sim))]] <- sim$disturbances[[paste0("Year", time(sim) - 1)]]
-        }
+        stop("This module does not work without data. Please provide the necessary layers")
       } else {
-        if (is.null(sim$disturbances)){
-          sim$disturbances <- list()
+        if (is.null(sim$modLayers)){
+          sim$modLayers <- list()
         }
         cohortData <- if (!is.null(sim$cohortData)) sim$cohortData else mod$cohortData
         pixelGroupMap <- if (!is.null(sim$pixelGroupMap)) sim$pixelGroupMap else mod$pixelGroupMap
+
+        caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
         
-        sim$disturbances <- getDisturbance(currentTime = time(sim),
+        sim$modLayers <- getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
                                            cohortData = cohortData, # Has age info per pixel group
@@ -155,32 +145,26 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                            listSACaribou = sim$listSACaribou,
                                            anthropogenicLayer = sim$anthropogenicLayer,
                                            waterRaster = sim$waterRaster,
-                                           isRSF = TRUE)
+                                           isRSF = TRUE,
+                                           decidousSp = P(sim)$decidousSp,
+                                           oldBurnTime = P(sim)$oldBurnTime,
+                                        caribouDynCovs = caribouDynCovs,
+                                        elevation = sim$Elevation,
+                                        vrug = sim$Vrug,
+                                        LCC05 = sim$LCC05,
+                                   reclassLCC05 = sim$reclassLCC05,
+                                   RTM = sim$rasterToMatch)
       }
       
-      sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- popGrowthModel(caribouModels = sim$caribouModels,
-                                                                          disturbances = sim$disturbances,
-                                                                          currentPop = sim$currentPop,
-                                                                          currentTime = time(sim),
-                                                                          startTime = start(sim),
-                                                                          adultFemaleSurv = sim$adultFemaleSurv,
-                                                                          popModel = P(sim)$popModel,
-                                                                          listSACaribou = sim$listSACaribou)
+      sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModels = sim$caribouModels,
+                                                                                modLayers = sim$modLayers,
+                                                                                currentTime = time(sim),
+                                                                                pathData = dataPath(sim))
       # schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + 1, "caribouRSF", "growingCaribou")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "growingCaribou")
       
     },
-    updatingPopulationSize = {
-      
-      sim$currentPop <- lapply(X = names(sim$caribouModels), FUN = function(model){
-        sim$predictedCaribou[[paste0("Year", time(sim))]][[model]]$currentPopUpdated
-      })
-      names(sim$currentPop) <- names(sim$caribouModels)
-      
-      # schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + 1, "caribouRSF", "updatingPopulationSize")
-      
-    },
+
     plot = {
       sim$plotCaribou <- plotCaribou(startTime = start(sim),
                                      currentTime = time(sim),
@@ -207,21 +191,21 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     sim$provinces <- "NWT"
   }
   if (!suppliedElsewhere("caribouCoefTableRSF", sim)){
-    sim$caribouCoefTableRSF <- prepInputs(targetFile = "caribouCoefTableRSF.csv", url = extractURL("caribouCoefTableRSF"),
+    sim$caribouCoefTableRSF <- prepInputs(targetFile = "caribouRSF_ModelCoefficents.csv", url = extractURL("caribouCoefTableRSF"),
                                        destinationPath = dataPath(sim), fun = "data.table::fread", 
                                        omitArgs = "destinationPath", overwrite = TRUE)
   }
 
   if (!suppliedElsewhere(object = "studyArea", sim = sim)){
     sim$studyArea <- cloudCache(prepInputs,
-                                url = "https://drive.google.com/open?id=1LUxoY2-pgkCmmNH5goagBp3IMpj6YrdU",
+                                url = extractURL("studyArea"),
                                 destinationPath = dataPath(sim),
                                 cloudFolderID = sim$cloudFolderID,
                                 omitArgs = c("destinationPath", "cloudFolderID"))
   }
   
   if (!suppliedElsewhere(object = "rasterToMatch", sim = sim)){
-    sim$rasterToMatch <- cloudCache(prepInputs, url = "https://drive.google.com/open?id=1fo08FMACr_aTV03lteQ7KsaoN9xGx1Df", 
+    sim$rasterToMatch <- cloudCache(prepInputs, url = extractURL("rasterToMatch"), 
                                     studyArea = sim$studyArea,
                                     targetFile = "RTM.tif", destinationPath = dataPath(sim), 
                                     useCloud = getOption("reproducible.useCloud", FALSE),
@@ -229,27 +213,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                     omitArgs = c("destinationPath", "cloudFolderID", "useCloud", "overwrite", "filename2"))
   }
   
-  if (!suppliedElsewhere(object = "caribouArea2", sim = sim)){
-    sim$caribouArea2 <- cloudCache(prepInputs,
-                                   url = extractURL("caribouArea2"),
-                                   destinationPath = dataPath(sim), filename2 = "caribouArea2",
-                                   useCloud = TRUE, cloudFolderID = cloudFolderID)
-  }
-  if (!suppliedElsewhere("caribouArea1", sim)){
-    sim$caribouArea1 <- cloudCache(prepInputs,
-                                   url = extractURL("caribouArea1"), studyArea = sim$studyArea,
-                                   destinationPath = dataPath(sim), filename2 = "caribouArea1",
-                                   rasterToMatch = sim$rasterToMatch,
-                                   useCloud = TRUE, cloudFolderID = cloudFolderID)
-  }
-  
-  if (!suppliedElsewhere("currentPop", sim) &
-      P(sim)$popModel != "annualLambda"){
-    message(crayon::yellow(paste0("Initial population size not provided.", 
-                                  "\nGenerating a mean population size for the studyArea of Edehzhie (n = 353).")))
-    sim$currentPop <- 353 # [ FIX ] should pass a file that is a list of population sizes for each one of the units/LPU for each studyArea shp 
-    
-  }
   if (!suppliedElsewhere("adultFemaleSurv", sim)){
     message(crayon::yellow(paste0("No LPU specific values for the female survival is available for NWT.", 
                                   "\nUsing national ECCC value of 0.85.")))
@@ -261,23 +224,57 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                            studyArea = sim$studyArea, 
                            userTags = "objectName:wetlandRaster")
     sim$waterRaster <- Cache(classifyWetlands, LCC = P(sim)$baseLayer,
+                             rasterToMatch = sim$rasterToMatch,
                              wetLayerInput = wetlandRaster,
                              pathData = dataPath(sim),
                              studyArea = sim$studyArea,
                              userTags = c("objectName:wetLCC"))
+    
     waterVals <- raster::getValues(sim$waterRaster) # Uplands = 3, Water = 1, Wetlands = 2, so 2 and 3 to NA
-    waterVals[waterVals == 1] <- NA
-    waterVals[waterVals > 1] <- 1
+    waterVals[!is.na(waterVals) & waterVals != 1] <- 0
     sim$waterRaster <- raster::setValues(sim$waterRaster, waterVals)
   }
-  
+
   if (!suppliedElsewhere("anthropogenicLayer", sim)){
     sim$anthropogenicLayer <- prepInputs(targetFile = "500mBufferedRoads_250m.tif",
-                                         url = "https://drive.google.com/open?id=1zj7zo8NBNhxxHMUL4ZnKTaP3niuQEI1m",
+                                         url = extractURL("anthropogenicLayer"),
                                          destinationPath = dataPath(sim), studyArea = sim$studyArea,
                                          overwrite = TRUE, 
                                          rasterToMatch = sim$rasterToMatch)
   }
   
+  if (!suppliedElsewhere("modelsToUse", sim)){
+    sim$modelsToUse <- "TaigaPlains"
+  }
+  if (!suppliedElsewhere("LCC05", sim)){
+    sim$LCC05 <- LandR::prepInputsLCC(destinationPath = dataPath(sim),
+                                      studyArea = sim$studyArea,
+                                      rasterToMatch = sim$rasterToMatch)
+  }
+  if (!suppliedElsewhere("Elevation", sim)){
+    sim$Elevation <- prepInputs(targetFile = "nadem100laz_BCR6_NWT.tif", 
+                                   url = extractURL("Elevation"),
+                                   destinationPath = dataPath(sim), studyArea = sim$studyArea,
+                                   overwrite = TRUE, fun = "raster::stack",
+                                   rasterToMatch = sim$rasterToMatch)
+    
+  }
+  if (!suppliedElsewhere("Vrug", sim)){
+    
+    sim$Vrug <- prepInputs(archive = "vrug_bcr6.zip",
+                           targetFile = "vrug_bcr6.tif",
+                                url = extractURL("Vrug"),
+                                destinationPath = dataPath(sim), studyArea = sim$studyArea,
+                                overwrite = TRUE, 
+                                rasterToMatch = sim$rasterToMatch)
+  }
+  if (!suppliedElsewhere("reclassLCC05", sim)){
+    
+    sim$reclassLCC05 <- prepInputs(targetFile = "Table41_ConvertLCC05.csv",
+                           url = extractURL("reclassLCC05"),
+                           destinationPath = dataPath(sim),
+                           overwrite = TRUE, fun = "data.table::fread")
+  }
+
   return(invisible(sim))
 }
