@@ -15,7 +15,8 @@ getLayers <- function(currentTime,
                       vrug,
                       LCC05,
                       reclassLCC05,
-                      RTM){
+                      RTM,
+                      forestOnly){
   
   # In a posterior version, will need to make this flexible for the model covariates
   reproducible::Require("raster")
@@ -91,6 +92,13 @@ getLayers <- function(currentTime,
                           RTM = RTM)
     
     # We need to override the LandR_Biomass pixels with deciduous trees that were originally classified as "herbaceous" by ECCC 
+    # We also need to mask the decidous to ONLY FOREST PIXELS!!
+    staticLayers[["Deciduous"]] <- postProcess(x = staticLayers[["Deciduous"]], rasterToMatch = forestOnly, maskWithRTM = TRUE,
+                                           destinationPath = tempdir(), filename2 = NULL)
+    
+    # This forestOnly layer excludes water too. However, for the RSF models we need to put these back, so add back the pixels as 0 from staticLayer[["Water"]] == 1
+    staticLayers[["Deciduous"]][dynamicLayers[["Water"]] == 1] <- 0
+    
     dynamicLayers[["Deciduous"]] <- staticLayers[["Deciduous"]]
     staticLayers <- raster::dropLayer(staticLayers, i = which(names(staticLayers)=="Deciduous"))
     

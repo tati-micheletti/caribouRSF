@@ -153,7 +153,8 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                         vrug = sim$Vrug,
                                         LCC05 = sim$LCC05,
                                    reclassLCC05 = sim$reclassLCC05,
-                                   RTM = sim$rasterToMatch)
+                                   RTM = sim$rasterToMatch,
+                                   forestOnly = sim$forestOnly)
       }
       
       sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModels = sim$caribouModels,
@@ -268,6 +269,13 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                            url = extractURL("reclassLCC05"),
                            destinationPath = dataPath(sim),
                            overwrite = TRUE, fun = "data.table::fread")
+  }
+  
+  if (!suppliedElsewhere("forestOnly", sim = sim, where = "sim")){
+    
+    forestClasses <- c(1:15, 34:35)
+    sim$forestOnly <- sim$rasterToMatch
+    sim$forestOnly[!sim$LCC05[] %in% forestClasses] <- NA
   }
 
   return(invisible(sim))
