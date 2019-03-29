@@ -1,9 +1,9 @@
-generateRSFPredictions <- function(coeffTable, resultCol, caribouModels,
+generateRSFPredictions <- function(coeffTable, resultCol, caribouModelsRSF,
                                    modelType){
   if (length(modelType)>1)
     stop("For now, RSF can't predict with more than one model type at a time") # [ FIX ] make it possible to run more than 1 model at a time
   
-  caribMod <- caribouModels[[modelType]]
+  caribMod <- caribouModelsRSF[[modelType]]
   
   coeffTable[, (resultCol) := rbindlist(Map(calculateRSF,
                                             Elevation = Elevation,
@@ -15,7 +15,7 @@ generateRSFPredictions <- function(coeffTable, resultCol, caribouModels,
                                             Water = Water,
                                             RecentBurn = RecentBurn,
                                             OldBurn = OldBurn,
-                                            caribouModels = caribMod)
+                                            caribouModelsRSF = caribMod)
   )]
   return(coeffTable)
 }

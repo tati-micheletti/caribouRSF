@@ -7,9 +7,9 @@ calculateRSF <- function(Elevation,
                          Water, 
                          RecentBurn,
                          OldBurn,
-                         caribouModels){
+                         caribouModelsRSF){
   
   if (is.na(Deciduous)) return(list(meanResponse = NA, sdResponse = NA))
-    resp <- eval(parse(text = caribouModels))
+    resp <- eval(parse(text = caribouModelsRSF))
     return(list(meanResponse = mean(resp), sdResponse = sd(resp)))
 }

@@ -1,4 +1,4 @@
-RSFModel <- function(caribouModels,
+RSFModel <- function(caribouModelsRSF,
                      modLayers,
                      currentTime,
                      pathData,
@@ -6,12 +6,12 @@ RSFModel <- function(caribouModels,
 
   message("Finding some Caribous in your study area...")
   yearPrediction <- lapply(X = names(modLayers), FUN = function(yrs) {
-    modsPred <- lapply(X = names(caribouModels), FUN = function(modelType) {
+    modsPred <- lapply(X = names(caribouModelsRSF), FUN = function(modelType) {
       coeffTable <- data.table::data.table(raster::getValues(modLayers[[yrs]]))
 
 coeffTable <- Cache(generateRSFPredictions, coeffTable = coeffTable,
                     resultCol = c("meanResponse","sdResponse"),
-                    caribouModels = caribouModels,
+                    caribouModelsRSF = caribouModelsRSF,
                     modelType = modelType,
                     userTags = c("function:generateRSFPredictions", 
                                  "objectName:coeffTable", 

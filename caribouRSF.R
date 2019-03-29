@@ -23,9 +23,6 @@ defineModule(sim, list(
     defineParameter(".plotTimeInterval", "numeric", 1, NA, NA, "Interval of plotting time"),
     defineParameter(".useDummyData", "logical", FALSE, NA, NA, "Should use dummy data? Automatically set"),
     defineParameter("recoveryTime", "numeric", 40, NA, NA, "Time to recover the forest enough for caribou"),
-    defineParameter("popModel", "character", "annualLambda", NA, NA, paste0("Which population model to use? Options", 
-                                                                            "are in the file popModels.R in the R folder", 
-                                                                            " Default is the simplest lamdba model")),
     defineParameter("predictionInterval", "numeric", 10, NA, NA, "Time between predictions"),
     defineParameter(name = "baseLayer", class = "character", default = 2005, min = NA, max = NA, 
                     desc = "Which layer should be used? LCC05 or LCC10?"),
@@ -84,7 +81,7 @@ defineModule(sim, list(
                  sourceURL = "https://drive.google.com/open?id=1pMfkIoqFoxwICMlend_mNuwNMGA5_6Fr")
   ), 
   outputObjects = bind_rows(
-    createsOutput(objectName = "caribouModels", objectClass = "list", 
+    createsOutput(objectName = "caribouModelsRSF", objectClass = "list", 
                   desc = "List with model equations. Default is TaigaPlains (ECCC 2011, Table 46)."),
     createsOutput(objectName = "predictedPresenceProbability", objectClass = "list", 
                   desc = "List of rasters per year, indicating the probability of presence of Caribous"),
@@ -105,15 +102,15 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     },
     makingModel = {
       # Prepare the Equation
-      sim$caribouModels <- createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
-                                        modelsToUse = sim$modelsToUse)
+      sim$caribouModelsRSF <- createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
+                                        modelsToUse = P(sim)$modelType)
     },
     gettingData = {
       Require("magrittr")
       mod$cohortData <- createModObject(data = "cohortData", sim = sim, 
-                                        pathInput = inputPath(sim), time = time(sim))
+                                        pathInput = inputPath(sim), currentTime = time(sim))
       mod$pixelGroupMap <- createModObject(data = "pixelGroupMap", sim = sim, 
-                                           pathInput = inputPath(sim), time = time(sim))
+                                           pathInput = inputPath(sim), currentTime = time(sim))
 
       if (any(is.null(mod$pixelGroupMap), is.null(mod$cohortData))) {
         params(sim)$.useDummyData <- TRUE
@@ -157,7 +154,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                    forestOnly = sim$forestOnly)
       }
       
-      sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModels = sim$caribouModels,
+      sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModelsRSF = sim$caribouModelsRSF,
                                                                                 modLayers = sim$modLayers,
                                                                                 currentTime = time(sim),
                                                                                 pathData = dataPath(sim),
