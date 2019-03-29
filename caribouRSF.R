@@ -129,16 +129,14 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
         if (is.null(sim$modLayers)){
           sim$modLayers <- list()
         }
-        cohortData <- if (!is.null(sim$cohortData)) sim$cohortData else mod$cohortData
-        pixelGroupMap <- if (!is.null(sim$pixelGroupMap)) sim$pixelGroupMap else mod$pixelGroupMap
 
         caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
         
         sim$modLayers <- getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
-                                           cohortData = cohortData, # Has age info per pixel group
-                                           pixelGroupMap = pixelGroupMap,
+                                           cohortData = mod$cohortData, # Has age info per pixel group
+                                           pixelGroupMap = mod$pixelGroupMap,
                                            recoveryTime = P(sim)$recoveryTime,
                                            listSACaribou = sim$listSACaribou,
                                            anthropogenicLayer = sim$anthropogenicLayer,

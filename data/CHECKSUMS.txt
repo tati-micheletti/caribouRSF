@@ -37,3 +37,7 @@
 "vrug_bcr6.tif.xml" "3cfed3361b57a387" "6163" "xxhash64"
 "._vrug_bcr6.tif.xml" "e459e57e9bea440b" "212" "xxhash64"
 "Table41_ConvertLCC05.csv" "a6a0da2c85fd597a" "2307" "xxhash64"
+"bufferMap_v0.1.0_m_r500_t0_anthrDisturb.zip" "c54d50e9b9707b80" "326396" "xxhash64"
+"bufferMap_v0.1.0_m_r500_t0_anthrDisturb.grd" "4bea9731e7b09037" "500" "xxhash64"
+"bufferMap_v0.1.0_m_r500_t0_anthrDisturb.gri" "0b035cde2f50bab8" "62292896" "xxhash64"
+"roadDensity_BCR6_NWT_t0.tif" "bdbd5d6d6a523d0a" "13525472" "xxhash64"

@@ -4,7 +4,7 @@ nameAndBringOn <- function(ras, name, RTM = NULL){
   names(ras) <- name
   ras[] <- ras[]
   if (!is.null(RTM)){
-    ras <- postProcess(ras, rasterToMatch = RTM, filename2 = NULL, destinationPath = tempdir())
+    ras <- postProcess(ras, rasterToMatch = RTM, filename2 = NULL, destinationPath = tempdir(), useCache = FALSE)
     rasVals <- raster::getValues(ras)
     valsRTM <- raster::getValues(RTM)
     rasVals[is.na(rasVals) & valsRTM == 1] <- 0
