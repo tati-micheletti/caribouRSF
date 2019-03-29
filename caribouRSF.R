@@ -43,7 +43,8 @@ defineModule(sim, list(
                  desc = paste0("data.table with information by pixel group of sp, age, biomass, etc")),
     expectsInput(objectName = "roadDensity", objectClass = "RasterLayer",
                  desc = paste0("Layer that maps a 10km buffer on each road.", 
-                               "This layer is static if no modules are forecasting anthropogenic disturbances")),
+                               "This layer is static if no modules are forecasting anthropogenic disturbances"), 
+                 sourceURL = "https://drive.google.com/open?id=1C0Y0z1cgQKwa3_-X2qWrhNIzEHIl9m5e"),
     expectsInput(objectName = "modelsToUse", objectClass = "character", 
                  desc = "Which models from ECCC to be used? National or regional?", 
                  sourceURL = NA),
@@ -86,7 +87,7 @@ defineModule(sim, list(
     createsOutput(objectName = "predictedPresenceProbability", objectClass = "list", 
                   desc = "List of rasters per year, indicating the probability of presence of Caribous"),
     createsOutput(objectName = "modLayers", objectClass = "RasterStack", 
-                  desc = "Stack of all dynamic layers: oldBurn, newBurn, biomassMap, anthropogenicLayer, waterRaster")
+                  desc = "Stack of all dynamic layers: oldBurn, newBurn, biomassMap, roadDensity, waterRaster")
   )
 ))
 
@@ -141,6 +142,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                            recoveryTime = P(sim)$recoveryTime,
                                            listSACaribou = sim$listSACaribou,
                                            anthropogenicLayer = sim$anthropogenicLayer,
+                                   roadDensity = sim$roadDensity,
                                            waterRaster = sim$waterRaster,
                                            isRSF = TRUE,
                                            decidousSp = P(sim)$decidousSp,
@@ -228,9 +230,20 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   }
 
   if (!suppliedElsewhere("anthropogenicLayer", sim)){
-    sim$anthropogenicLayer <- prepInputs(targetFile = "500mBufferedRoads_250m.tif",
-                                         url = extractURL("anthropogenicLayer"),
+    sim$anthropogenicLayer <- prepInputs(targetFile = "bufferMap_v0.1.0_m_r500_t0_anthrDisturb.grd",
+                                         archive = "bufferMap_v0.1.0_m_r500_t0_anthrDisturb.zip",
+                                         alsoExtract = "similar",
+                                         url = "https://drive.google.com/open?id=1GhnIjmKsZ3JoxTjefeeBUb02iiEcV_qD",
                                          destinationPath = dataPath(sim), studyArea = sim$studyArea,
+                                         overwrite = TRUE, 
+                                         rasterToMatch = sim$rasterToMatch)
+  }
+  
+  if (!suppliedElsewhere("roadDensity", sim)){
+    sim$roadDensity <- prepInputs(targetFile = "roadDensity_BCR6_NWT_t0.tif",
+                                         url = extractURL("roadDensity"),
+                                         destinationPath = dataPath(sim), 
+                                         studyArea = sim$studyArea,
                                          overwrite = TRUE, 
                                          rasterToMatch = sim$rasterToMatch)
   }

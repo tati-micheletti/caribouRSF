@@ -4,14 +4,14 @@ createDynamicLayersRSF <- function(ageMap,
                                    oldBurnTime,
                                    oldBurnName,
                                    newBurnName,
-                                   anthropogenicLayer,
-                                   anthropogenicLayerName,
+                                   roadDensity,
+                                   roadDensityName,
                                    waterRaster,
                                    waterRasterName,
                                    RTM){
 
   biomassMap <- nameAndBringOn(ras = biomassMap, name = biomassMapName, RTM = RTM)
-  anthropogenicLayer <- nameAndBringOn(ras = anthropogenicLayer, name = anthropogenicLayerName, RTM = RTM)
+  roadDensity <- nameAndBringOn(ras = roadDensity, name = roadDensityName, RTM = RTM)
   waterRaster <- nameAndBringOn(ras = waterRaster, name = waterRasterName, RTM = RTM)
 
   burnStk <- raster::stack(burnFromAge(ageMap = ageMap, oldBurnTime = oldBurnTime, 
@@ -25,7 +25,7 @@ createDynamicLayersRSF <- function(ageMap,
    # 2. Make sure all rasters are in the same extent
   tryCatch(expr = {
     
-    dynamicStack <- raster::stack(burnStk, biomassMap, anthropogenicLayer, waterRaster)
+    dynamicStack <- raster::stack(burnStk, biomassMap, roadDensity, waterRaster)
     return(dynamicStack)
     
   }, error = function(e){
@@ -33,9 +33,9 @@ createDynamicLayersRSF <- function(ageMap,
 
     exts <- c(raster::extent(biomassMap), 
                    raster::extent(burnStk), 
-                   raster::extent(anthropogenicLayer), 
+                   raster::extent(roadDensity), 
                    raster::extent(waterRaster))
-    names(exts) <- c("biomassMap", "burnStk", "anthropogenicLayer", "waterRaster")
+    names(exts) <- c("biomassMap", "burnStk", "roadDensity", "waterRaster")
     
     tbl <- outer(exts, exts, Vectorize(all.equal))
     whichNot <- unlist(lapply(X = seq_len(length(exts)), function(res){
@@ -50,7 +50,7 @@ createDynamicLayersRSF <- function(ageMap,
       return(fxL)
     }
     ))
-    fineStacks <- setdiff(c("burnStk", "biomassMap", "anthropogenicLayer", "waterRaster"), whichNot)
+    fineStacks <- setdiff(c("burnStk", "biomassMap", "roadDensity", "waterRaster"), whichNot)
     fineStacks <- raster::stack(lapply(X = fineStacks, FUN = function(r){
       ras <- get(r)
       return(ras)
