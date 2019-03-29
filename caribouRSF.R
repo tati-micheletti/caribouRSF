@@ -160,7 +160,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                                                                 pathData = dataPath(sim),
                                                                                 modelType = P(sim)$modelType)
       # schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "growingCaribou")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "lookingForCaribou")
       
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
