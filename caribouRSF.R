@@ -158,7 +158,8 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                                                                 modLayers = sim$modLayers,
                                                                                 currentTime = time(sim),
                                                                                 pathData = dataPath(sim),
-                                                                                modelType = P(sim)$modelType)
+                                                                                modelType = P(sim)$modelType,
+                                                                                pathOut = outputPath(sim))
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "lookingForCaribou")
       
