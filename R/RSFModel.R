@@ -5,7 +5,7 @@ RSFModel <- function(caribouModelsRSF,
                      modelType,
                      pathOut){
 
-  message("Finding some Caribous in your study area...")
+  message("Forecasting caribou habitat from RSF ...")
   yearPrediction <- lapply(X = names(modLayers), FUN = function(yrs) {
     modsPred <- lapply(X = names(caribouModelsRSF), FUN = function(modelType) {
       coeffTable <- data.table::data.table(raster::getValues(modLayers[[yrs]]))
