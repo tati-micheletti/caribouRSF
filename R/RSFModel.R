@@ -2,9 +2,10 @@ RSFModel <- function(caribouModelsRSF,
                      modLayers,
                      currentTime,
                      pathData,
-                     modelType){
+                     modelType,
+                     pathOut){
 
-  message("Finding some Caribous in your study area...")
+  message("Forecasting caribou habitat from RSF ...")
   yearPrediction <- lapply(X = names(modLayers), FUN = function(yrs) {
     modsPred <- lapply(X = names(caribouModelsRSF), FUN = function(modelType) {
       coeffTable <- data.table::data.table(raster::getValues(modLayers[[yrs]]))
@@ -22,7 +23,8 @@ predAndUncertain <- generateRSFRas(modelType = modelType,
                             currentTime = currentTime, 
                             responseTable = coeffTable, 
                             column = c("meanResponse", "sdResponse"),
-                            rasName = c("relativeSelection", "relativeSelectionUncertain"))
+                            rasName = c("relativeSelection", "relativeSelectionUncertain"),
+                            pathOut = pathOut)
 return(predAndUncertain)
 
     })

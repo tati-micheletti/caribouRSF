@@ -1,5 +1,5 @@
 generateRSFRas <- function(modelType, templateRas, currentTime, 
-                           responseTable, column, rasName){
+                           responseTable, column, rasName, pathOut){
   rasList <- lapply(X = seq_len(length(rasName)), FUN = function(r){
     
     ras <- raster::setValues(x = raster(templateRas[[paste0("Year", currentTime)]][[1]]), 
@@ -10,6 +10,8 @@ generateRSFRas <- function(modelType, templateRas, currentTime,
     WaterRas[WaterRas == 1] <- NA
     ras <- postProcess(x = ras, rasterToMatch = WaterRas, maskWithRTM = TRUE, 
                        filename2 = NULL, destinationPath = tempdir())
+    writeRaster(x = ras, filename = file.path(pathOut, paste0(rasName[r], modelType, "_Year", currentTime)),
+                format = "GTiff")
     return(ras)
   })
   names(rasList) <- rasName

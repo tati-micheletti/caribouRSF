@@ -40,7 +40,7 @@ getLayers <- function(currentTime,
   
   if (!isRSF){
     listDistForEachShpForEachPoly <- lapply(X = listSACaribou, FUN = function(caribouShapefile){
-      listPolyDist <- Cache(extractDisturbance, ageMap = ageMap,
+      listPolyDist <- extractDisturbance(ageMap = ageMap,
                             caribouShapefile = caribouShapefile,
                             recoveryTime = recoveryTime,
                             anthropogenicLayer = anthropogenicLayer,
@@ -67,8 +67,7 @@ getLayers <- function(currentTime,
     # waterLayer = waterRaster
     # Deciduous = biomassMap
     
-    dynamicLayers <- Cache(createDynamicLayersRSF, 
-                           ageMap = ageMap,
+    dynamicLayers <- createDynamicLayersRSF(ageMap = ageMap,
                            biomassMap = biomassMap,
                            biomassMapName = "Deciduous",
                            oldBurnTime = oldBurnTime,
@@ -80,8 +79,7 @@ getLayers <- function(currentTime,
                            waterRasterName = "Water",
                            RTM = RTM)
     
-    staticLayers <- Cache(createStaticLayersRSF, 
-                          elevation = elevation,
+    staticLayers <- createStaticLayersRSF(elevation = elevation,
                           vrug = vrug,
                           LCC = LCC05,
                           shrubName = "Shrub",
@@ -95,7 +93,7 @@ getLayers <- function(currentTime,
     # We need to override the LandR_Biomass pixels with deciduous trees that were originally classified as "herbaceous" by ECCC 
     # We also need to mask the decidous to ONLY FOREST PIXELS!!
     staticLayers[["Deciduous"]] <- postProcess(x = staticLayers[["Deciduous"]], rasterToMatch = forestOnly, maskWithRTM = TRUE,
-                                           destinationPath = tempdir(), filename2 = NULL)
+                                           destinationPath = tempdir(), useCache = FALSE, filename2 = NULL)
     
     # This forestOnly layer excludes water too. However, for the RSF models we need to put these back, so add back the pixels as 0 from staticLayer[["Water"]] == 1
     staticLayers[["Deciduous"]][dynamicLayers[["Water"]] == 1] <- 0

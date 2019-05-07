@@ -139,16 +139,14 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
         if (is.null(sim$modLayers)){
           sim$modLayers <- list()
         }
-        cohortData <- if (!is.null(sim$cohortData)) sim$cohortData else mod$cohortData
-        pixelGroupMap <- if (!is.null(sim$pixelGroupMap)) sim$pixelGroupMap else mod$pixelGroupMap
 
         caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
         
         sim$modLayers <- getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
-                                           cohortData = cohortData, # Has age info per pixel group
-                                           pixelGroupMap = pixelGroupMap,
+                                           cohortData = mod$cohortData, # Has age info per pixel group
+                                           pixelGroupMap = mod$pixelGroupMap,
                                            recoveryTime = P(sim)$recoveryTime,
                                            listSACaribou = sim$listSACaribou,
                                            anthropogenicLayer = sim$anthropogenicLayer,
@@ -170,12 +168,14 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                                                                 modLayers = sim$modLayers,
                                                                                 currentTime = time(sim),
                                                                                 pathData = dataPath(sim),
-                                                                                modelType = P(sim)$modelType)
+                                                                                modelType = P(sim)$modelType,
+                                                                                pathOut = outputPath(sim))
 
       raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelection"]])
       title(main = paste0("Predicted caribou presence probability for year ", time(sim)))
       # raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelectionUncertain"]])
       # title(main = paste0("Predicted caribou presence probability uncertainty for year ", time(sim)))
+      
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "lookingForCaribou")
       
