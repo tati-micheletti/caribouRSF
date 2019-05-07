@@ -95,6 +95,16 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
+      # plot(sim$waterRaster)
+      # title(main = "Water Layer")
+      # plot(sim$anthropogenicLayer)
+      # title(main = "Anthropogenic Layer")
+      # plot(sim$roadDensity)
+      # title(main = "Road Density Layer")
+      # plot(sim$Elevation)
+      # title(main = "Elevation Layer")
+      # plot(sim$Vrug)
+      # title(main = "Ruggedness Layer")
       
       # schedule future event(s)
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "makingModel")
@@ -161,6 +171,11 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                                                                 currentTime = time(sim),
                                                                                 pathData = dataPath(sim),
                                                                                 modelType = P(sim)$modelType)
+
+      raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelection"]])
+      title(main = paste0("Predicted caribou presence probability for year ", time(sim)))
+      # raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelectionUncertain"]])
+      # title(main = paste0("Predicted caribou presence probability uncertainty for year ", time(sim)))
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "lookingForCaribou")
       
@@ -227,6 +242,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     waterVals <- raster::getValues(sim$waterRaster) # Uplands = 3, Water = 1, Wetlands = 2, so 2 and 3 to NA
     waterVals[!is.na(waterVals) & waterVals != 1] <- 0
     sim$waterRaster <- raster::setValues(sim$waterRaster, waterVals)
+
   }
 
   if (!suppliedElsewhere("anthropogenicLayer", sim)){
@@ -237,6 +253,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                          destinationPath = dataPath(sim), studyArea = sim$studyArea,
                                          overwrite = TRUE, 
                                          rasterToMatch = sim$rasterToMatch)
+
   }
   
   if (!suppliedElsewhere("roadDensity", sim)){
@@ -262,6 +279,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                    destinationPath = dataPath(sim), studyArea = sim$studyArea,
                                    overwrite = TRUE, fun = "raster::stack",
                                    rasterToMatch = sim$rasterToMatch)
+
     
   }
   if (!suppliedElsewhere("Vrug", sim)){
@@ -272,6 +290,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                 destinationPath = dataPath(sim), studyArea = sim$studyArea,
                                 overwrite = TRUE, 
                                 rasterToMatch = sim$rasterToMatch)
+
   }
   if (!suppliedElsewhere("reclassLCC05", sim)){
     
