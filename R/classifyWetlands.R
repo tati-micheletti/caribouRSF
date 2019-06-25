@@ -60,8 +60,8 @@ classifyWetlands <- function(LCC = P(sim)$baseLayer,
   lccWetLayer[watVector] <- 1
 
   # Mask it with RTM
-  prepRTM <- postProcess(rasterToMatch, rasterToMatch = lccWetLayer)
-  lccWetLayer <- postProcess(lccWetLayer, rasterToMatch = prepRTM, maskWithRTM = TRUE)
+  prepRTM <- postProcess(rasterToMatch, rasterToMatch = lccWetLayer, filename2 = NULL)
+  lccWetLayer <- postProcess(lccWetLayer, rasterToMatch = prepRTM, maskWithRTM = TRUE, filename2 = NULL)
   lccWetLayer[lccWetLayer == 0] <- NA
   
   # Do uplands and wetlands

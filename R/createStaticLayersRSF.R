@@ -9,6 +9,7 @@ createStaticLayersRSF <- function(elevation,
                                   dynamicLayers,
                                   RTM){
   
+  message("Creating static layers. Cached objects are fine here...")
   elevation <- Cache(nameAndBringOn, ras = elevation, name = elevationName, RTM = RTM)
   vrug <- Cache(nameAndBringOn, ras = vrug, name = vrugName, RTM = RTM)
   

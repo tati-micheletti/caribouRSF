@@ -15,6 +15,8 @@ defineModule(sim, list(
   documentation = list("README.txt", "caribouRSF.Rmd"),
   reqdPkgs = list("data.table", "ggplot2", "pemisc"), 
   parameters = rbind(
+    defineParameter("predictLastYear", "logical", TRUE, NA, NA, paste0("If last year of simulation is not multiple of",
+                    " predictionInterval, should it predict for the last year too?")),
     defineParameter(".useCache", "logical", FALSE, NA, NA, "Should this entire module be run with caching activated?"),
     defineParameter("modelType", "character", "TaigaPlains", NA, NA, "Should this entire module be run with caching activated?"),
     defineParameter("meanFire", "numeric", 30.75, NA, NA, "Mean cummulative fire from ECCC Scientific report 2011"),
@@ -24,12 +26,12 @@ defineModule(sim, list(
     defineParameter(".useDummyData", "logical", FALSE, NA, NA, "Should use dummy data? Automatically set"),
     defineParameter("recoveryTime", "numeric", 40, NA, NA, "Time to recover the forest enough for caribou"),
     defineParameter("predictionInterval", "numeric", 10, NA, NA, "Time between predictions"),
-    defineParameter(name = "baseLayer", class = "character", default = 2005, min = NA, max = NA, 
+    defineParameter(name = "baseLayer", class = "numeric", default = 2005, min = NA, max = NA, 
                     desc = "Which layer should be used? LCC05 or LCC10?"),
     defineParameter(name = "decidousSp", class = "character", default = c("Betu_Pap", "Popu_Tre", "Popu_Bal"), 
                     min = NA, max = NA, desc = "Deciduous species to be considered for caribou"),
     defineParameter(name = "oldBurnTime", class = "numeric", default = 40, 
-                    min = NA, max = NA, desc = "Threshold for oldBurn/newBurn")
+                    min = NA, max = NA, desc = "Threshold for oldBurn/newBurn. Max oldburn + 20")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "waterRaster", objectClass = "RasterLayer",
@@ -95,17 +97,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
-      # plot(sim$waterRaster)
-      # title(main = "Water Layer")
-      # plot(sim$anthropogenicLayer)
-      # title(main = "Anthropogenic Layer")
-      # plot(sim$roadDensity)
-      # title(main = "Road Density Layer")
-      # plot(sim$Elevation)
-      # title(main = "Elevation Layer")
-      # plot(sim$Vrug)
-      # title(main = "Ruggedness Layer")
-      
       # schedule future event(s)
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "makingModel")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "gettingData")
@@ -129,6 +120,10 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "gettingData")
+      if (P(sim)$predictLastYear){
+        if (all(time(sim) == start(sim), (end(sim)-start(sim)) != 0))
+          sim <- scheduleEvent(sim, end(sim), "caribouRSF", "gettingData")
+      }
       
     },
     lookingForCaribou = {
@@ -150,7 +145,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                            recoveryTime = P(sim)$recoveryTime,
                                            listSACaribou = sim$listSACaribou,
                                            anthropogenicLayer = sim$anthropogenicLayer,
-                                   roadDensity = sim$roadDensity,
+                                           roadDensity = sim$roadDensity,
                                            waterRaster = sim$waterRaster,
                                            isRSF = TRUE,
                                            decidousSp = P(sim)$decidousSp,
@@ -163,21 +158,36 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                    RTM = sim$rasterToMatch,
                                    forestOnly = sim$forestOnly)
       }
-      
-      sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModelsRSF = sim$caribouModelsRSF,
-                                                                                modLayers = sim$modLayers,
-                                                                                currentTime = time(sim),
-                                                                                pathData = dataPath(sim),
-                                                                                modelType = P(sim)$modelType,
-                                                                                pathOut = outputPath(sim))
+      fls <- tryCatch({grepMulti(x = list.files(outputPath(sim)), patterns = c("relativeSelection", time(sim)))}, error = function(e){
+        return(NULL)
+      })
+      if (length(fls) > 0) { 
+        # THIS SOLUTION PROBABLY DOESN'T WORK FOR WHEN WE ADD ANOTHER MODEL! WILL HAVE TO BE FIXED BY THEN!!!
+        sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- list(lapply(file.path(outputPath(sim), fls), FUN = raster))
+        names(sim$predictedPresenceProbability[[paste0("Year", time(sim))]]) <- sim$modelsToUse
+        names(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][[sim$modelsToUse]]) <- c("relativeSelection", "relativeSelectionUncertain")
+        
+      } else {
+        
+        sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModelsRSF = sim$caribouModelsRSF,
+                                                                                  modLayers = sim$modLayers,
+                                                                                  currentTime = time(sim),
+                                                                                  pathData = dataPath(sim),
+                                                                                  modelType = P(sim)$modelType,
+                                                                                  pathOut = outputPath(sim))
+              }
 
-      raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelection"]])
-      title(main = paste0("Predicted caribou presence probability for year ", time(sim)))
+      # raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelection"]])
+      # title(main = paste0("Predicted caribou presence probability for year ", time(sim)))
       # raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelectionUncertain"]])
       # title(main = paste0("Predicted caribou presence probability uncertainty for year ", time(sim)))
       
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "lookingForCaribou")
+      if (P(sim)$predictLastYear){
+        if (all(time(sim) == start(sim), (end(sim)-start(sim)) != 0))
+          sim <- scheduleEvent(sim, end(sim), "caribouRSF", "lookingForCaribou")
+      }
       
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
@@ -187,7 +197,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
 }
 
 .inputObjects <- function(sim) {
-  
+
   params(sim)$.useDummyData <- FALSE
   
   cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"

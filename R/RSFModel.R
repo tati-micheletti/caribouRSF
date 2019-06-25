@@ -10,13 +10,10 @@ RSFModel <- function(caribouModelsRSF,
     modsPred <- lapply(X = names(caribouModelsRSF), FUN = function(modelType) {
       coeffTable <- data.table::data.table(raster::getValues(modLayers[[yrs]]))
 
-coeffTable <- Cache(generateRSFPredictions, coeffTable = coeffTable,
+coeffTable <- generateRSFPredictions(coeffTable = coeffTable,
                     resultCol = c("meanResponse","sdResponse"),
                     caribouModelsRSF = caribouModelsRSF,
-                    modelType = modelType,
-                    userTags = c("function:generateRSFPredictions", 
-                                 "objectName:coeffTable", 
-                                 "module:caribouRSF"))
+                    modelType = modelType)
 
 predAndUncertain <- generateRSFRas(modelType = modelType, 
                             templateRas = modLayers, 

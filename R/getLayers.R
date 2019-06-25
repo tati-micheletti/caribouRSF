@@ -1,15 +1,15 @@
 getLayers <- function(currentTime,
-                           cohortData, # Has age info per pixel group
-                           pixelGroupMap, #Map of pixel groups
-                           startTime,
-                           endTime,
-                           recoveryTime,
-                           listSACaribou,
-                           anthropogenicLayer,
+                      cohortData, # Has age info per pixel group
+                      pixelGroupMap, #Map of pixel groups
+                      startTime,
+                      endTime,
+                      recoveryTime,
+                      listSACaribou,
+                      anthropogenicLayer,
                       roadDensity,
-                           waterRaster,
-                           isRSF = FALSE,
-                           decidousSp,
+                      waterRaster,
+                      isRSF = FALSE,
+                      decidousSp,
                       oldBurnTime,
                       caribouDynCovs,
                       elevation,
@@ -17,7 +17,7 @@ getLayers <- function(currentTime,
                       LCC05,
                       reclassLCC05,
                       RTM,
-                      forestOnly){
+                      forestOnly) {
   
   # In a posterior version, will need to make this flexible for the model covariates
   reproducible::Require("raster")
@@ -90,12 +90,16 @@ getLayers <- function(currentTime,
                           dynamicLayers = dynamicLayers,
                           RTM = RTM)
     
-    # We need to override the LandR_Biomass pixels with deciduous trees that were originally classified as "herbaceous" by ECCC 
-    # We also need to mask the decidous to ONLY FOREST PIXELS!!
-    staticLayers[["Deciduous"]] <- postProcess(x = staticLayers[["Deciduous"]], rasterToMatch = forestOnly, maskWithRTM = TRUE,
-                                           destinationPath = tempdir(), useCache = FALSE, filename2 = NULL)
+    # We need to override the LandR_Biomass pixels with deciduous trees that were originally classified as 
+    # "herbaceous" by ECCC 
+    # We also need to mask the decidous to ONLY FOREST PIXELS!! 
+    # [UPDATE on 7th June] I will try not to mask it. 
+    # LandR should be providing way better estimates of biomass for non-forest pixels. Therefore next line is commented out
+    # staticLayers[["Deciduous"]] <- postProcess(x = staticLayers[["Deciduous"]], rasterToMatch = forestOnly, maskWithRTM = TRUE,
+    #                                        destinationPath = tempdir(), useCache = FALSE, filename2 = NULL)
     
-    # This forestOnly layer excludes water too. However, for the RSF models we need to put these back, so add back the pixels as 0 from staticLayer[["Water"]] == 1
+    # This forestOnly layer excludes water too. However, for the RSF models we need to put these back, 
+    # so add back the pixels as 0 from staticLayer[["Water"]] == 1
     staticLayers[["Deciduous"]][dynamicLayers[["Water"]] == 1] <- 0
     
     dynamicLayers[["Deciduous"]] <- staticLayers[["Deciduous"]]
