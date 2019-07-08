@@ -1,7 +1,7 @@
 defineModule(sim, list(
   name = "caribouRSF",
-  description = paste0("Module to simulate Caribou population growth, based", 
-                       " on lambda using published ECCC data"),
+  description = paste0("Module to simulate caribou resource selection", "
+                       based on the Taiga plains RSF model published by ECCC 2012"),
   keywords = c("Caribou", "population", "lambda"),
   authors = c(person("Tati", "Micheletti", email = "tati.micheletti@gmail.com", role = c("aut", "cre")),
               person("Frances", "Stewart", email = "frances.stewart@canada.ca", role = c("aut", "cre")),
