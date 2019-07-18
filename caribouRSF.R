@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "caribouRSF.Rmd"),
-  reqdPkgs = list("data.table", "ggplot2", "pemisc"), 
+  reqdPkgs = list("data.table", "ggplot2", "PredictiveEcology/pemisc", "tati-micheletti/usefun"), 
   parameters = rbind(
     defineParameter("predictLastYear", "logical", TRUE, NA, NA, paste0("If last year of simulation is not multiple of",
                     " predictionInterval, should it predict for the last year too?")),
@@ -137,7 +137,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
 
         caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
         
-        sim$modLayers <- getLayers(currentTime = time(sim),
+        sim$modLayers[[paste0("Year", time(sim))]] <- getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
                                            cohortData = mod$cohortData, # Has age info per pixel group
@@ -170,7 +170,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       } else {
         
         sim$predictedPresenceProbability[[paste0("Year", time(sim))]] <- RSFModel(caribouModelsRSF = sim$caribouModelsRSF,
-                                                                                  modLayers = sim$modLayers,
+                                                                                  modLayers = sim$modLayers[[paste0("Year", time(sim))]],
                                                                                   currentTime = time(sim),
                                                                                   pathData = dataPath(sim),
                                                                                   modelType = P(sim)$modelType,
