@@ -104,14 +104,14 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     },
     makingModel = {
       # Prepare the Equation
-      sim$caribouModelsRSF <- createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
+      sim$caribouModelsRSF <- usefun::createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
                                         modelsToUse = P(sim)$modelType)
     },
     gettingData = {
       Require("magrittr")
-      mod$cohortData <- createModObject(data = "cohortData", sim = sim, 
+      mod$cohortData <- usefun::createModObject(data = "cohortData", sim = sim, 
                                         pathInput = inputPath(sim), currentTime = time(sim))
-      mod$pixelGroupMap <- createModObject(data = "pixelGroupMap", sim = sim, 
+      mod$pixelGroupMap <- usefun::createModObject(data = "pixelGroupMap", sim = sim, 
                                            pathInput = inputPath(sim), currentTime = time(sim))
 
       if (any(is.null(mod$pixelGroupMap), is.null(mod$cohortData))) {
@@ -137,7 +137,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
 
         caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
         
-        sim$modLayers[[paste0("Year", time(sim))]] <- getLayers(currentTime = time(sim),
+        sim$modLayers[[paste0("Year", time(sim))]] <- usefun::getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
                                            cohortData = mod$cohortData, # Has age info per pixel group
@@ -150,15 +150,13 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                            isRSF = TRUE,
                                            decidousSp = P(sim)$decidousSp,
                                            oldBurnTime = P(sim)$oldBurnTime,
-                                        caribouDynCovs = caribouDynCovs,
                                         elevation = sim$Elevation,
                                         vrug = sim$Vrug,
                                         LCC05 = sim$LCC05,
                                    reclassLCC05 = sim$reclassLCC05,
-                                   RTM = sim$rasterToMatch,
-                                   forestOnly = sim$forestOnly)
+                                   rasterToMatch = sim$rasterToMatch)
       }
-      fls <- tryCatch({grepMulti(x = list.files(outputPath(sim)), patterns = c("relativeSelection", time(sim)))}, error = function(e){
+      fls <- tryCatch({usefun::grepMulti(x = list.files(outputPath(sim)), patterns = c("relativeSelection", time(sim)))}, error = function(e){
         return(NULL)
       })
       if (length(fls) > 0) { 
