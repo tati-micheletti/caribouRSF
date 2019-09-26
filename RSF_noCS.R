@@ -10,8 +10,8 @@ workDirectory <- getwd()
 message("Your current temporary directory is ", tempdir())
 
 setPaths(modulePath = file.path(dirname(getwd())), 
-         inputPath = file.path("/mnt/data/Micheletti/NWT/outputs/08JUN19_noCS/"), 
-         outputPath = file.path("/mnt/data/Micheletti/NWT/outputs/08JUN19_noCS/RSF/"), 
+         inputPath = file.path("/mnt/data/Micheletti/NWT/outputs/11AUG19/LandR_SCFM_run1/"), 
+         outputPath = file.path("/mnt/data/Micheletti/NWT/outputs/11AUG19/LandR_SCFM_run1/RSF/"), 
          cachePath = file.path("/mnt/data/Micheletti/NWT/cache/"))
 getPaths() # shows where the 4 relevant paths are
 
