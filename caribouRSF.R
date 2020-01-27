@@ -21,8 +21,8 @@ defineModule(sim, list(
     defineParameter("modelType", "character", "TaigaPlains", NA, NA, "Should this entire module be run with caching activated?"),
     defineParameter("meanFire", "numeric", 30.75, NA, NA, "Mean cummulative fire from ECCC Scientific report 2011"),
     defineParameter("sdFire", "numeric", 10.6, NA, NA, "SD cummulative fire from ECCC Scientific report 2011"),
-    defineParameter(".plotInitialTime", "numeric", start(sim) + 1, NA, NA, "inital plot time"),
-    defineParameter(".plotTimeInterval", "numeric", 1, NA, NA, "Interval of plotting time"),
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "inital plot time"),
+    defineParameter(".plotTimeInterval", "numeric", 10, NA, NA, "Interval of plotting time"),
     defineParameter(".useDummyData", "logical", FALSE, NA, NA, "Should use dummy data? Automatically set"),
     defineParameter("recoveryTime", "numeric", 40, NA, NA, "Time to recover the forest enough for caribou"),
     defineParameter("predictionInterval", "numeric", 10, NA, NA, "Time between predictions"),
@@ -103,6 +103,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "makingModel")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "gettingData")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "lookingForCaribou")
+      sim <- scheduleEvent(sim, end(sim), "caribouRSF", "plot", eventPriority = .last()) #P(sim)$.plotInitialTime
     },
     makingModel = {
       # Prepare the Equation
@@ -129,8 +130,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       
     },
     lookingForCaribou = {
-      
-      if (params(sim)$.useDummyData == TRUE){
+      if (isTRUE(P(sim)$.useDummyData)){
         stop("This module does not work without data. Please provide the necessary layers")
       } else {
         if (is.null(sim$modLayers)){
@@ -177,11 +177,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                                                                   pathOut = outputPath(sim))
               }
 
-      # raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelection"]])
-      # title(main = paste0("Predicted caribou presence probability for year ", time(sim)))
-      # raster::plot(sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelectionUncertain"]])
-      # title(main = paste0("Predicted caribou presence probability uncertainty for year ", time(sim)))
-      
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$predictionInterval, "caribouRSF", "lookingForCaribou")
       if (P(sim)$predictLastYear){
@@ -189,6 +184,15 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
           sim <- scheduleEvent(sim, end(sim), "caribouRSF", "lookingForCaribou")
       }
       
+    },
+    plot = {
+      caribouResourceSelection <- sim$predictedPresenceProbability[[paste0("Year", time(sim))]][["TaigaPlains"]][["relativeSelection"]]
+      Plot(caribouResourceSelection, 
+           title = "Caribou resource selection")
+
+      # schedule future event(s)
+      if (time(sim) != end(sim))
+        sim <- scheduleEvent(sim, end(sim), "caribouRSF", "plot", eventPriority = .last())
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -198,8 +202,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
 
 .inputObjects <- function(sim) {
 
-  params(sim)$.useDummyData <- FALSE
-  
   cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
@@ -228,8 +230,9 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     sim$rasterToMatch <- Cache(prepInputs, url = extractURL("rasterToMatch"), 
                                studyArea = sim$studyArea,
                                targetFile = "RTM.tif", destinationPath = dataPath(sim), 
-                               useCloud = P(sim)$.useCloud,
-                               cloudFolderID = sim$cloudFolderID, overwrite = TRUE, filename2 = NULL,
+                               # useCloud = P(sim)$.useCloud,
+                               # cloudFolderID = sim$cloudFolderID, 
+                               overwrite = TRUE, filename2 = NULL,
                                omitArgs = c("destinationPath", "cloudFolderID", "useCloud", "overwrite", "filename2"))
   }
   
