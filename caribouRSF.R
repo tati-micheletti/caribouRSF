@@ -208,26 +208,27 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     sim$provinces <- "NWT"
   }
   if (!suppliedElsewhere("caribouCoefTableRSF", sim)){
-    sim$caribouCoefTableRSF <- prepInputs(targetFile = "caribouRSF_ModelCoefficents.csv", url = extractURL("caribouCoefTableRSF"),
-                                       destinationPath = dataPath(sim), fun = "data.table::fread", 
-                                       omitArgs = "destinationPath", overwrite = TRUE)
+    sim$caribouCoefTableRSF <- prepInputs(targetFile = "caribouRSF_ModelCoefficents.csv", 
+                                          url = extractURL("caribouCoefTableRSF"),
+                                          destinationPath = dataPath(sim), fun = "data.table::fread", 
+                                          omitArgs = "destinationPath", overwrite = TRUE)
   }
 
   if (!suppliedElsewhere(object = "studyArea", sim = sim)){
-    sim$studyArea <- cloudCache(prepInputs,
-                                url = extractURL("studyArea"),
-                                destinationPath = dataPath(sim),
-                                cloudFolderID = sim$cloudFolderID,
-                                omitArgs = c("destinationPath", "cloudFolderID"))
+    sim$studyArea <- Cache(prepInputs,
+                           url = extractURL("studyArea"),
+                           destinationPath = dataPath(sim),
+                           cloudFolderID = sim$cloudFolderID,
+                           omitArgs = c("destinationPath", "cloudFolderID"))
   }
   
   if (!suppliedElsewhere(object = "rasterToMatch", sim = sim)){
-    sim$rasterToMatch <- cloudCache(prepInputs, url = extractURL("rasterToMatch"), 
-                                    studyArea = sim$studyArea,
-                                    targetFile = "RTM.tif", destinationPath = dataPath(sim), 
-                                    useCloud = getOption("reproducible.useCloud", FALSE),
-                                    cloudFolderID = sim$cloudFolderID, overwrite = TRUE, filename2 = NULL,
-                                    omitArgs = c("destinationPath", "cloudFolderID", "useCloud", "overwrite", "filename2"))
+    sim$rasterToMatch <- Cache(prepInputs, url = extractURL("rasterToMatch"), 
+                               studyArea = sim$studyArea,
+                               targetFile = "RTM.tif", destinationPath = dataPath(sim), 
+                               useCloud = P(sim)$.useCloud,
+                               cloudFolderID = sim$cloudFolderID, overwrite = TRUE, filename2 = NULL,
+                               omitArgs = c("destinationPath", "cloudFolderID", "useCloud", "overwrite", "filename2"))
   }
   
   if (!suppliedElsewhere("adultFemaleSurv", sim)){
