@@ -31,7 +31,9 @@ defineModule(sim, list(
     defineParameter(name = "decidousSp", class = "character", default = c("Betu_Pap", "Popu_Tre", "Popu_Bal"), 
                     min = NA, max = NA, desc = "Deciduous species to be considered for caribou"),
     defineParameter(name = "oldBurnTime", class = "numeric", default = 40, 
-                    min = NA, max = NA, desc = "Threshold for oldBurn/newBurn. Max oldburn + 20")
+                    min = NA, max = NA, desc = "Threshold for oldBurn/newBurn. Max oldburn + 20"),
+    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "waterRaster", objectClass = "RasterLayer",
