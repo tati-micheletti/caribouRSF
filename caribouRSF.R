@@ -138,7 +138,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                            pathInput = inputPath(sim), currentTime = time(sim))
 
       if (any(is.null(mod$pixelGroupMap), is.null(mod$cohortData))) {
-        params(sim)$.useDummyData <- TRUE
+        params(sim)$caribouRSF$.useDummyData <- TRUE
       }
       
       # schedule future event(s)
