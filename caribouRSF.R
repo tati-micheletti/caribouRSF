@@ -337,18 +337,20 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   if (!suppliedElsewhere(object = "caribouArea2", sim = sim)){
     sim$caribouArea2 <- Cache(prepInputs, url = extractURL("caribouArea2"),
                               targetFile = "NT1_BOCA_spatial_units_for_landscape_projections.shp",
+                              alsoExtract = "similar", overwrite = TRUE,
                               destinationPath = dataPath(sim), filename2 = "caribouArea2")
   }
   if (!suppliedElsewhere("caribouArea1", sim)){
     sim$caribouArea1 <- Cache(prepInputs, url = extractURL("caribouArea1"),
                               targetFile = "NWT_Regions_2015_LCs_DC_SS_combined_NT1_clip_inc_Yukon.shp",
+                              alsoExtract = "similar", overwrite = TRUE,
                               destinationPath = dataPath(sim), filename2 = "caribouArea1")
   }
   
   if (!suppliedElsewhere("Edehzhie", sim)){
     sim$Edehzhie <- Cache(prepInputs, targetFile = "Edehzhie.shp",
                           archive = "Edehzhie.zip",
-                          alsoExtract = "similar",
+                          alsoExtract = "similar", overwrite = TRUE,
                           url = extractURL("Edehzhie"), studyArea = sim$studyArea,
                           destinationPath = dataPath(sim), filename2 = NULL,
                           rasterToMatch = sim$rasterToMatch)
