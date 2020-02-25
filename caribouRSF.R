@@ -263,20 +263,14 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   }
   
   if (!suppliedElsewhere("waterRaster", sim)){
-    wetlandRaster <- Cache(prepInputsLayers_DUCKS, destinationPath = dataPath(sim), 
-                           studyArea = sim$studyArea, 
-                           userTags = "objectName:wetlandRaster")
-    sim$waterRaster <- Cache(classifyWetlands, LCC = P(sim)$baseLayer,
-                             rasterToMatch = sim$rasterToMatch,
-                             wetLayerInput = wetlandRaster,
-                             pathData = dataPath(sim),
-                             studyArea = sim$studyArea,
-                             userTags = c("objectName:wetLCC"))
+    sim$waterRaster <- Cache(prepInputsLayers_DUCKS, destinationPath = dataPath(sim), 
+                           studyArea = sim$studyArea, lccLayer =  P(sim)$baseLayer,
+                           rasterToMatch = sim$rasterToMatch,
+                           userTags = c("objectName:wetLCC"))
     
     waterVals <- raster::getValues(sim$waterRaster) # Uplands = 3, Water = 1, Wetlands = 2, so 2 and 3 to NA
     waterVals[!is.na(waterVals) & waterVals != 1] <- 0
     sim$waterRaster <- raster::setValues(sim$waterRaster, waterVals)
-
   }
 
   if (!suppliedElsewhere("anthropogenicLayer", sim)){
