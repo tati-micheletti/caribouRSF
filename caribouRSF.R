@@ -264,7 +264,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   
   if (!suppliedElsewhere("waterRaster", sim)){
     sim$waterRaster <- Cache(prepInputsLayers_DUCKS, destinationPath = dataPath(sim), 
-                           studyArea = sim$studyArea, lccLayer =  P(sim)$baseLayer,
+                           studyArea = sim$studyArea, lccLayer = P(sim)$baseLayer,
                            rasterToMatch = sim$rasterToMatch,
                            userTags = c("objectName:wetLCC"))
     
