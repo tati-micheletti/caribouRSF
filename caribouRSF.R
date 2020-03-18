@@ -84,15 +84,6 @@ defineModule(sim, list(
     expectsInput(objectName = "reclassLCC05", objectClass = "data.table",
                  desc = "Table 41 from ECCC report converting LCC05 classes", 
                  sourceURL = "https://drive.google.com/open?id=1pMfkIoqFoxwICMlend_mNuwNMGA5_6Fr"),
-    expectsInput(objectName = "caribouArea1", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "Study area to predict caribou population to (NWT_Regions_2015_LCs_DC_SS)",
-                 sourceURL = "https://drive.google.com/open?id=1Qbt2pOvC8lGg25zhfMWcc3p6q3fZtBtO"),
-    expectsInput(objectName = "Edehzhie", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "Study area to predict caribou pospulation to",
-                 sourceURL = "https://drive.google.com/open?id=1VP91AyIeGCFwJS9oPSEno4_SbtJQJMh7"),
-    expectsInput(objectName = "caribouArea2", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "Study area to predict caribou population to (NT1_BOCA_spatial_units_for_landscape)",
-                 sourceURL = "https://drive.google.com/open?id=1Vqny_ZMoksAjji4upnr3OiJl2laGeBGV"),
     expectsInput(objectName = "currentPop", objectClass = "numeric", 
                  desc = "Caribou population size in the study area. Is updated every time step",
                  sourceURL = NA)
@@ -106,7 +97,7 @@ defineModule(sim, list(
                   desc = "Stack of all dynamic layers: oldBurn, newBurn, biomassMap, roadDensity, waterRaster"),
     createsOutput(objectName = "listSACaribou", objectClass = "list", 
                   desc = paste0("List of caribou areas to predict for",
-                                " Currently only takes 3 shapefiles"))
+                                " Currently the default is 3 shapefiles: Edehzhie, range planning, herds"))
   )
 ))
 
@@ -114,10 +105,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
-      
-      sim$listSACaribou = list(sim$caribouArea1, sim$caribouArea2, sim$Edehzhie)
-      names(sim$listSACaribou) <- c("caribouArea1", "caribouArea2", "Edehzhie")
-      
                                
       # schedule future event(s)
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "makingModel")
@@ -328,29 +315,30 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                            overwrite = TRUE, fun = "data.table::fread")
   }
   
-  if (!suppliedElsewhere(object = "caribouArea2", sim = sim)){
-    sim$caribouArea2 <- Cache(prepInputs, url = extractURL("caribouArea2"),
+  if (!suppliedElsewhere(object = "listSACaribou", sim = sim)){
+    
+    caribouArea2 <- Cache(prepInputs, url = "https://drive.google.com/open?id=1Vqny_ZMoksAjji4upnr3OiJl2laGeBGV",
                               targetFile = "NT1_BOCA_spatial_units_for_landscape_projections.shp",
                               alsoExtract = "similar", overwrite = TRUE,
                               destinationPath = dataPath(sim), filename2 = "caribouArea2")
-  }
-  if (!suppliedElsewhere("caribouArea1", sim)){
-    sim$caribouArea1 <- Cache(prepInputs, url = extractURL("caribouArea1"),
-                              targetFile = "NWT_Regions_2015_LCs_DC_SS_combined_NT1_clip_inc_Yukon.shp",
-                              alsoExtract = "similar", overwrite = TRUE,
-                              destinationPath = dataPath(sim), filename2 = "caribouArea1")
-  }
-  
-  if (!suppliedElsewhere("Edehzhie", sim)){
-    sim$Edehzhie <- Cache(prepInputs, targetFile = "Edehzhie.shp",
-                          archive = "Edehzhie.zip",
+    
+    Edehzhie <- Cache(prepInputs, targetFile = "Edehzhie.shp",
+                      archive = "Edehzhie.zip",
+                      alsoExtract = "similar", overwrite = TRUE,
+                      url = "https://drive.google.com/open?id=1VP91AyIeGCFwJS9oPSEno4_SbtJQJMh7", 
+                      studyArea = sim$studyArea,
+                      destinationPath = dataPath(sim), filename2 = NULL,
+                      rasterToMatch = sim$rasterToMatch)
+    
+    caribouArea1 <- Cache(prepInputs, url = "https://drive.google.com/open?id=1Qbt2pOvC8lGg25zhfMWcc3p6q3fZtBtO",
+                          targetFile = "NWT_Regions_2015_LCs_DC_SS_combined_NT1_clip_inc_Yukon.shp",
                           alsoExtract = "similar", overwrite = TRUE,
-                          url = extractURL("Edehzhie"), studyArea = sim$studyArea,
-                          destinationPath = dataPath(sim), filename2 = NULL,
-                          rasterToMatch = sim$rasterToMatch)
-    sim$Edehzhie$Name <- sim$Edehzhie$NAME_1
+                          destinationPath = dataPath(sim), filename2 = "caribouArea1")
+    
+    sim$listSACaribou = list(sim$caribouArea1, sim$caribouArea2, sim$Edehzhie)
+    names(sim$listSACaribou) <- c("caribouArea1", "caribouArea2", "Edehzhie")
   }
-  
+
   if (!suppliedElsewhere("forestOnly", sim = sim, where = "sim")){
     
     forestClasses <- c(1:15, 34:35)
