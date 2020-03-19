@@ -61,8 +61,6 @@ defineModule(sim, list(
     expectsInput(objectName = "Vrug", objectClass = "RasterLayer", 
                  desc = "Raster with elevation values", 
                  sourceURL = "https://drive.google.com/open?id=16u07GpGQbBd5Yh8xPZ_xLiUo31OF0uDP"),
-    expectsInput(objectName = "provincesToModel", objectClass = "character", 
-                 desc = "Which province caribou data should be used for the module?"),
     expectsInput(objectName = "caribouCoefTableRSF", objectClass = "data.table", 
                  desc = "Published caribou coefficients", 
                  sourceURL = "https://drive.google.com/open?id=16bgCDuQaxrQakKs2RL-eU2iFAhWylcRu"),
