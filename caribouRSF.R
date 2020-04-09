@@ -328,7 +328,8 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                       destinationPath = dataPath(sim), filename2 = NULL,
                       rasterToMatch = sim$rasterToMatch)
     
-    caribouArea1 <- Cache(prepInputs, url = "https://drive.google.com/open?id=1Qbt2pOvC8lGg25zhfMWcc3p6q3fZtBtO",
+    caribouArea1 <- Cache(prepInputs, 
+                          url = "https://drive.google.com/open?id=1Qbt2pOvC8lGg25zhfMWcc3p6q3fZtBtO",
                           targetFile = "NWT_Regions_2015_LCs_DC_SS_combined_NT1_clip_inc_Yukon.shp",
                           alsoExtract = "similar", overwrite = TRUE,
                           destinationPath = dataPath(sim), filename2 = "caribouArea1")
