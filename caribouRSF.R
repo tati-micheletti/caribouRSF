@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "caribouRSF.Rmd"),
-  reqdPkgs = list("data.table", "ggplot2", "PredictiveEcology/pemisc", "tati-micheletti/usefun"), 
+  reqdPkgs = list("data.table", "ggplot2", "PredictiveEcology/pemisc", "tati-micheletti/usefulFuns"), 
   parameters = rbind(
     defineParameter("predictLastYear", "logical", TRUE, NA, NA, paste0("If last year of simulation is not multiple of",
                     " predictionInterval, should it predict for the last year too?")),
@@ -64,7 +64,7 @@ defineModule(sim, list(
     expectsInput(objectName = "caribouCoefTableRSF", objectClass = "data.table", 
                  desc = "Published caribou coefficients", 
                  sourceURL = "https://drive.google.com/open?id=16bgCDuQaxrQakKs2RL-eU2iFAhWylcRu"),
-    expectsInput(objectName = "LCC05", objectClass = "RasterLayer", 
+    expectsInput(objectName = "rstLCC", objectClass = "RasterLayer", 
                  desc = "This will give is both shrub and herb layers", 
                  sourceURL = ""),
     expectsInput(objectName = "fixedLayers", objectClass = "character", 
@@ -114,14 +114,14 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     },
     makingModel = {
       # Prepare the Equation
-      sim$caribouModelsRSF <- usefun::createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
+      sim$caribouModelsRSF <- usefulFuns::createModels(caribouCoefTable = sim$caribouCoefTableRSF, 
                                         modelsToUse = P(sim)$modelType)
     },
     gettingData = {
       Require("magrittr")
-      mod$cohortData <- usefun::createModObject(data = "cohortData", sim = sim, 
+      mod$cohortData <- usefulFuns::createModObject(data = "cohortData", sim = sim, 
                                         pathInput = inputPath(sim), currentTime = time(sim))
-      mod$pixelGroupMap <- usefun::createModObject(data = "pixelGroupMap", sim = sim, 
+      mod$pixelGroupMap <- usefulFuns::createModObject(data = "pixelGroupMap", sim = sim, 
                                            pathInput = inputPath(sim), currentTime = time(sim))
 
       if (any(is.null(mod$pixelGroupMap), is.null(mod$cohortData))) {
@@ -146,7 +146,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
 
         caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
         
-        sim$modLayers[[paste0("Year", time(sim))]] <- usefun::getLayers(currentTime = time(sim),
+        sim$modLayers[[paste0("Year", time(sim))]] <- usefulFuns::getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
                                            cohortData = mod$cohortData, # Has age info per pixel group
@@ -161,11 +161,11 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                            oldBurnTime = P(sim)$oldBurnTime,
                                         elevation = sim$Elevation,
                                         vrug = sim$Vrug,
-                                        LCC05 = sim$LCC05,
+                                        LCC05 = sim$rstLCC,
                                    reclassLCC05 = sim$reclassLCC05,
                                    rasterToMatch = sim$rasterToMatch)
       }
-      fls <- tryCatch({usefun::grepMulti(x = list.files(outputPath(sim)), patterns = c("relativeSelection", time(sim)))}, error = function(e){
+      fls <- tryCatch({usefulFuns::grepMulti(x = list.files(outputPath(sim)), patterns = c("relativeSelection", time(sim)))}, error = function(e){
         return(NULL)
       })
       if (length(fls) > 0) { 
@@ -283,8 +283,8 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
   if (!suppliedElsewhere("modelsToUse", sim)){
     sim$modelsToUse <- "TaigaPlains"
   }
-  if (!suppliedElsewhere("LCC05", sim)){
-    sim$LCC05 <- LandR::prepInputsLCC(destinationPath = dataPath(sim),
+  if (!suppliedElsewhere("rstLCC", sim)){
+    sim$rstLCC <- LandR::prepInputsLCC(destinationPath = dataPath(sim),
                                       studyArea = sim$studyArea,
                                       rasterToMatch = sim$rasterToMatch)
   }
@@ -344,7 +344,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
     
     forestClasses <- c(1:15, 34:35)
     sim$forestOnly <- sim$rasterToMatch
-    sim$forestOnly[!sim$LCC05[] %in% forestClasses] <- NA
+    sim$forestOnly[!sim$rstLCC[] %in% forestClasses] <- NA
   }
 
   return(invisible(sim))

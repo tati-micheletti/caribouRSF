@@ -41,7 +41,7 @@ roadDensityName <- ""
 water.url <- "https://drive.google.com/open?id=1YVTcIexNk-obATw2ahrgxA6uvIlr-6xm"
 waterName <- "wetlandsNWT250m.tif" # This could also potentially be generated using functions (as I did for birds). Or come from birds Model. THis migh be just for .inputObjs
 
-shrub, herb <- LCC05 # exists 
+shrub, herb <- LCC # exists 
 
 recentBurn <- scfm same way for the other caribou model... < 40
 oldBurn <- scfm same way for the other caribou model... > 40
