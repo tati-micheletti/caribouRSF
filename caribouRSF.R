@@ -21,7 +21,7 @@ defineModule(sim, list(
     defineParameter("modelType", "character", "TaigaPlains", NA, NA, "Should this entire module be run with caching activated?"),
     defineParameter("meanFire", "numeric", 30.75, NA, NA, "Mean cummulative fire from ECCC Scientific report 2011"),
     defineParameter("sdFire", "numeric", 10.6, NA, NA, "SD cummulative fire from ECCC Scientific report 2011"),
-    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "inital plot time"),
+    defineParameter("plotTime", "numeric", end(sim), NA, NA, "plot time"),
     defineParameter(".plotTimeInterval", "numeric", 10, NA, NA, "Interval of plotting time"),
     defineParameter(".useDummyData", "logical", FALSE, NA, NA, "Should use dummy data? Automatically set"),
     defineParameter("recoveryTime", "numeric", 40, NA, NA, "Time to recover the forest enough for caribou"),
@@ -110,7 +110,7 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "makingModel")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "gettingData")
       sim <- scheduleEvent(sim, start(sim), "caribouRSF", "lookingForCaribou")
-      sim <- scheduleEvent(sim, end(sim), "caribouRSF", "plot", eventPriority = .last()) #P(sim)$.plotInitialTime
+      sim <- scheduleEvent(sim, P(sim)$plotTime, "caribouRSF", "plot", eventPriority = .last()) #P(sim)$.plotInitialTime
     },
     makingModel = {
       # Prepare the Equation
@@ -165,7 +165,10 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
                                    reclassLCC05 = sim$reclassLCC05,
                                    rasterToMatch = sim$rasterToMatch)
       }
-      fls <- tryCatch({usefulFuns::grepMulti(x = list.files(outputPath(sim)), patterns = c("relativeSelection", time(sim)))}, error = function(e){
+      fls <- tryCatch({usefulFuns::grepMulti(x = list.files(outputPath(sim)), 
+                                             patterns = c("relativeSelection",
+                                                          time(sim)))}, 
+                      error = function(e){
         return(NULL)
       })
       if (length(fls) > 0) { 
