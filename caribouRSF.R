@@ -144,8 +144,6 @@ doEvent.caribouRSF = function(sim, eventTime, eventType) {
           sim$modLayers <- list()
         }
 
-        caribouDynCovs <- sim$caribouCoefTableRSF[ModelNum == sim$modelsToUse, ][!is.na(Value), Coefficient]
-        
         sim$modLayers[[paste0("Year", time(sim))]] <- usefulFuns::getLayers(currentTime = time(sim),
                                            startTime = start(sim),
                                            endTime = end(sim),
