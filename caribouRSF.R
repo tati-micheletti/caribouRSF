@@ -35,7 +35,7 @@ defineModule(sim, list(
     defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "waterRaster", objectClass = "RasterLayer",
                  desc = "Wetland raster for excluding water from anthropogenic layer",
                  sourceURL = NA),
@@ -88,7 +88,7 @@ defineModule(sim, list(
                  desc = "Caribou population size in the study area. Is updated every time step",
                  sourceURL = NA)
   ), 
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "caribouModelsRSF", objectClass = "list", 
                   desc = "List with model equations. Default is TaigaPlains (ECCC 2011, Table 46)."),
     createsOutput(objectName = "predictedPresenceProbability", objectClass = "list", 
